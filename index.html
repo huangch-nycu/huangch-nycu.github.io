@@ -1,11 +1,179 @@
-<!DOCTYPE HTML>
-<html>
-  <head>
-    <title>Home of Huang Chung Hsuan</title>
-  </head>
-  <body>
-    <p>
-      Hello, world!
-    </p>
-  </body>
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>賽博龐克歡迎頁面</title>
+  <style>
+    /* 基本重置 */
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{height:100%}
+    body{
+      font-family:Inter, "Noto Sans TC", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      background:#030104;
+      color:#e6f0ff;
+      overflow:hidden;
+    }
+
+    /* 背景漸層與網格 */
+    .bg{
+      position:fixed;inset:0;z-index:0;pointer-events:none;
+      background: radial-gradient(ellipse at 20% 10%, rgba(120,0,255,0.12) 0%, transparent 20%),
+                  radial-gradient(ellipse at 80% 80%, rgba(0,240,255,0.08) 0%, transparent 20%),
+                  linear-gradient(180deg,#05040b 0%, #050516 60%, #02040a 100%);
+    }
+    .grid{
+      position:absolute;inset:0;background-image:linear-gradient(transparent 92%, rgba(255,255,255,0.03) 92%), linear-gradient(90deg, transparent 92%, rgba(255,255,255,0.02) 92%);
+      background-size:100% 40px, 40px 100%; mix-blend-mode:overlay; opacity:.6; transform:translateZ(0);
+    }
+
+    /* 霓虹文字 */
+    .container{
+      position:relative;z-index:2;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:2rem;
+    }
+    .card{
+      width:min(980px,94%);
+      border-radius:16px;padding:36px 40px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      box-shadow:0 8px 40px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.02);
+      backdrop-filter: blur(6px);
+      border:1px solid rgba(255,255,255,0.04);
+      display:grid;grid-template-columns:1fr 360px;gap:28px;align-items:center;
+    }
+
+    h1{
+      font-size:48px;line-height:1;letter-spacing:1px;margin-bottom:10px;
+      color:#a6f3ff;text-shadow:0 0 16px rgba(0,255,255,0.12), 0 0 36px rgba(170,0,255,0.06);
+    }
+    .glow{
+      color:#ff6ec7;text-shadow:0 0 6px rgba(255,110,199,0.8), 0 0 24px rgba(255,110,199,0.18), 0 0 56px rgba(120,0,255,0.08);
+      font-weight:700;
+    }
+    p.lead{margin-bottom:18px;color:rgba(230,240,255,0.85);font-size:16px}
+
+    /* 按鈕 */
+    .cta{display:inline-grid;grid-auto-flow:column;gap:12px;align-items:center}
+    .btn{
+      padding:12px 18px;border-radius:10px;border:1px solid rgba(255,255,255,0.06);cursor:pointer;font-weight:600;
+      background:linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));backdrop-filter: blur(4px);
+      transition:transform .18s ease, box-shadow .18s ease; color:#08161a
+    }
+    .btn.primary{background:linear-gradient(90deg,#00f0ff22,#ff3ad422);color:white;box-shadow:0 6px 22px rgba(255,58,212,0.08)}
+    .btn:hover{transform:translateY(-4px)}
+
+    /* 側欄 */
+    .meta{padding:18px;border-radius:12px;background:linear-gradient(180deg, rgba(0,0,0,0.25), rgba(255,255,255,0.02));border:1px solid rgba(255,255,255,0.03)}
+    .logo{display:flex;gap:12px;align-items:center;margin-bottom:16px}
+    .logo .mark{width:54px;height:54px;border-radius:8px;background:linear-gradient(135deg,#ff2d9e,#4b00ff);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;box-shadow:0 8px 26px rgba(120,0,255,0.18)}
+    .meta small{display:block;color:rgba(230,240,255,0.6);margin-bottom:10px}
+
+    /* 動畫 - 掃描線 & 干擾 */
+    .scanline{position:absolute;inset:0;z-index:1;pointer-events:none;background-image:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.00));mix-blend-mode:overlay;opacity:0.5;mask-image:linear-gradient(transparent,black,transparent);animation:scan 8s linear infinite}
+    @keyframes scan{0%{background-position:0 -40vh}100%{background-position:0 140vh}}
+
+    .glitch{
+      position:relative;display:inline-block;
+    }
+    .glitch::before,.glitch::after{
+      content:attr(data-text);position:absolute;left:0;top:0;width:100%;overflow:hidden;clip-path:inset(0 0 0 0);
+    }
+    .glitch::before{color:#ff4da6;z-index:-2;transform:translate(-2px,-1px);mix-blend-mode:screen;opacity:0.9}
+    .glitch::after{color:#00f0ff;z-index:-3;transform:translate(2px,1px);mix-blend-mode:screen;opacity:0.8}
+    .glitch.animated::before{animation:glitch1 2.2s infinite}
+    .glitch.animated::after{animation:glitch2 1.9s infinite}
+    @keyframes glitch1{0%{transform:translate(-2px,-1px)}30%{transform:translate(-20px,6px)}60%{transform:translate(10px,-4px)}100%{transform:translate(-2px,-1px)}}
+    @keyframes glitch2{0%{transform:translate(2px,1px)}30%{transform:translate(14px,-6px)}60%{transform:translate(-8px,5px)}100%{transform:translate(2px,1px)}}
+
+    /* 地平線效果 */
+    .horizon{height:12px;background:linear-gradient(90deg,#ff3ad4, #00f0ff);border-radius:6px;box-shadow:0 6px 40px rgba(0,255,255,0.06);margin-top:18px}
+
+    /* 音波 / 進度線 */
+    .bars{display:flex;gap:6px;align-items:end;height:40px}
+    .bar{width:6px;border-radius:4px;background:linear-gradient(180deg,#fff,#00f0ff22);opacity:0.9;animation:wave 1s ease-in-out infinite}
+    .bar:nth-child(2){animation-delay:.08s}
+    .bar:nth-child(3){animation-delay:.16s}
+    .bar:nth-child(4){animation-delay:.24s}
+    .bar:nth-child(5){animation-delay:.32s}
+    @keyframes wave{0%{height:6px}50%{height:34px}100%{height:6px}}
+
+    /* 響應 */
+    @media (max-width:880px){
+      .card{grid-template-columns:1fr;}
+      h1{font-size:36px}
+    }
+  </style>
+</head>
+<body>
+  <div class="bg"></div>
+  <div class="grid"></div>
+  <div class="scanline"></div>
+
+  <main class="container">
+    <section class="card" role="region" aria-label="Cyberpunk Welcome">
+      <div>
+        <h1><span class="glow glitch animated" data-text="WELCOME">WELCOME</span> to <span class="glow">NEON CITY</span></h1>
+        <p class="lead">穿越城市的霓虹與靜電，這裡是數據與記憶交疊的邊界。按下「進入」以探索虛實之間的節點。</p>
+
+        <div class="cta">
+          <button class="btn primary" id="enterBtn">進入</button>
+          <button class="btn" id="aboutBtn">關於</button>
+        </div>
+
+        <div class="horizon" aria-hidden="true"></div>
+
+        <div style="margin-top:18px;display:flex;gap:18px;align-items:center;">
+          <div class="bars" aria-hidden="true">
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+          </div>
+          <small style="color:rgba(230,240,255,0.5)">SYSTEM ONLINE · 0xA1F3</small>
+        </div>
+      </div>
+
+      <aside class="meta">
+        <div class="logo">
+          <div class="mark">NX</div>
+          <div>
+            <div style="font-weight:700">NEON X</div>
+            <small>都市 / 資訊 / 感官</small>
+          </div>
+        </div>
+        <small>版本 1.0 · 建議在 Chrome 或 Edge 上獲得最佳效果</small>
+        <div style="height:12px"></div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;color:rgba(230,240,255,0.7)">節點</span><strong>12</strong></div>
+          <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;color:rgba(230,240,255,0.7)">連線</span><strong>3ms</strong></div>
+          <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;color:rgba(230,240,255,0.7)">安全</span><strong>OK</strong></div>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <script>
+    // 小互動：按下進入後展開全螢幕效果並轉場
+    const enter = document.getElementById('enterBtn');
+    const about = document.getElementById('aboutBtn');
+
+    enter.addEventListener('click', ()=>{
+      document.body.style.transition='filter 0.6s ease';
+      document.body.style.filter='blur(4px)';
+      const overlay = document.createElement('div');
+      overlay.style.position='fixed';overlay.style.inset=0;overlay.style.zIndex=9999;overlay.style.background='radial-gradient(circle at 50% 40%, rgba(255,58,212,0.12), rgba(0,240,255,0.06))';
+      overlay.style.display='flex';overlay.style.alignItems='center';overlay.style.justifyContent='center';overlay.style.flexDirection='column';
+      overlay.innerHTML=`<div style="text-align:center;color:white"><h2 style="font-size:48px;margin-bottom:12px">進入中...</h2><p style="opacity:0.85">連接到 NEON CITY 節點</p></div>`;
+      document.body.appendChild(overlay);
+      setTimeout(()=>{
+        overlay.querySelector('h2').textContent='歡迎，駭客。';
+        overlay.style.transition='opacity 0.6s ease';overlay.style.opacity=1;
+      },900);
+      setTimeout(()=>{location.href='#';},2200);
+    });
+
+    about.addEventListener('click', ()=>{
+      alert('這個範例為賽博龐克風格的歡迎頁面，包含霓虹、干擾效果與小互動。可修改文字與色彩以客製化。');
+    });
+  </script>
+</body>
 </html>
