@@ -3,597 +3,361 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>找因數遊戲</title>
+    <title>找出因數大挑戰</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&display=swap');
         body { font-family: 'Noto Sans TC', sans-serif; }
-        .draggable {
-            cursor: grab;
-            transition: all 0.2s ease;
-            user-select: none;
-        }
-        .draggable:hover {
-            transform: scale(1.05);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        }
-        .draggable.dragging {
-            opacity: 0.5;
-            transform: rotate(5deg);
-            cursor: grabbing;
-        }
-        .drop-zone {
-            min-height: 60px;
-            transition: all 0.2s ease;
-            border: 2px dashed #d1d5db;
-        }
-        .drop-zone.drag-over {
-            border-color: #3b82f6;
-            background-color: #eff6ff;
-            transform: scale(1.02);
-        }
-        .drop-zone.filled {
-            border-color: #10b981;
-            background-color: #ecfdf5;
-        }
-        .correct-answer {
-            background-color: #dcfce7 !important;
-            border-color: #16a34a !important;
-            animation: correctPulse 0.6s ease;
-        }
-        .incorrect-answer {
-            background-color: #fef2f2 !important;
-            border-color: #dc2626 !important;
-            animation: shake 0.5s ease;
-        }
-        .pulse {
-            animation: pulse 2s infinite;
-        }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
-        }
-        @keyframes correctPulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
-        }
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-5px); }
-            75% { transform: translateX(5px); }
-        }
-        .candidate-number {
-            animation: slideIn 0.3s ease forwards;
-        }
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
     </style>
 </head>
-<body class="bg-gradient-to-br from-blue-100 to-purple-100 min-h-screen">
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
     <div class="container mx-auto px-4 py-8 max-w-4xl">
-        <!-- 遊戲標題 -->
+        <!-- Header -->
         <div class="text-center mb-8">
-            <h1 class="text-4xl font-bold text-purple-800 mb-2">🔢 找因數遊戲</h1>
-            <p class="text-lg text-gray-600">找出所有的因數，挑戰你的數學能力！</p>
+            <h1 class="text-4xl font-bold text-indigo-800 mb-2">找出因數大挑戰</h1>
+            <p class="text-gray-600">找出所有的因數，挑戰你的數學能力！</p>
         </div>
 
-        <!-- 玩家姓名輸入 -->
-        <div id="name-input-area" class="bg-white rounded-xl shadow-lg p-6 mb-6 text-center">
-            <div class="mb-4">
-                <label for="player-name" class="block text-lg font-semibold text-gray-700 mb-2">
-                    👋 請輸入你的姓名
-                </label>
-                <input type="text" id="player-name" placeholder="輸入你的姓名..." 
-                       class="w-full max-w-md mx-auto px-4 py-3 border-2 border-gray-300 rounded-lg text-center text-lg font-medium focus:border-blue-500 focus:outline-none transition-colors">
+        <!-- User Setup Screen -->
+        <div id="setupScreen" class="bg-white rounded-xl shadow-lg p-8 mb-6">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-6 text-center">開始遊戲</h2>
+            <div class="max-w-md mx-auto">
+                <label class="block text-gray-700 font-medium mb-2">請輸入你的姓名：</label>
+                <input type="text" id="userName" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none text-lg" placeholder="輸入姓名">
+                <button onclick="startGame()" class="w-full mt-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-200 text-lg">開始遊戲</button>
             </div>
-            <p class="text-sm text-gray-500">
-                輸入姓名後就可以開始遊戲囉！
-            </p>
         </div>
 
-        <!-- 遊戲狀態 -->
-        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
-            <div class="flex justify-between items-center flex-wrap gap-4">
-                <div class="flex items-center space-x-6">
-                    <div class="text-center">
-                        <div class="text-2xl font-bold text-blue-600" id="timer">00:00</div>
-                        <div class="text-sm text-gray-500">已用時間</div>
+        <!-- Game Screen -->
+        <div id="gameScreen" style="display: none;">
+            <!-- Progress and Timer -->
+            <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+                <div class="flex justify-between items-center">
+                    <div class="text-lg">
+                        <span class="font-semibold text-gray-700">玩家：</span>
+                        <span id="displayName" class="text-indigo-600 font-bold"></span>
                     </div>
-                    <div class="text-center">
-                        <div class="text-2xl font-bold text-green-600" id="score">0</div>
-                        <div class="text-sm text-gray-500">得分</div>
+                    <div class="text-lg">
+                        <span class="font-semibold text-gray-700">題目：</span>
+                        <span id="questionCounter" class="text-blue-600 font-bold">1/10</span>
                     </div>
-                    <div class="text-center">
-                        <div class="text-2xl font-bold text-purple-600" id="question-counter">1/10</div>
-                        <div class="text-sm text-gray-500">題目進度</div>
+                    <div class="text-lg">
+                        <span class="font-semibold text-gray-700">總時間：</span>
+                        <span id="timer" class="text-red-600 font-bold">0秒</span>
                     </div>
                 </div>
-                <button id="start-btn" class="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg font-semibold transition-colors">
-                    開始遊戲
-                </button>
             </div>
-        </div>
 
-        <!-- 遊戲區域 -->
-        <div id="game-area" class="bg-white rounded-xl shadow-lg p-8 mb-6 hidden">
-            <div class="text-center mb-8">
-                <h2 class="text-3xl font-bold text-gray-800 mb-4">
-                    找出 <span id="current-number" class="text-blue-600">12</span> 的所有因數
+            <!-- Question -->
+            <div class="bg-white rounded-xl shadow-lg p-8 mb-6">
+                <h2 class="text-2xl font-semibold text-center mb-6">
+                    請選擇 <span id="currentNumber" class="text-3xl font-bold text-indigo-600">12</span> 的所有因數：
                 </h2>
-                <p class="text-gray-600">拖曳下方的數字到答案區域（包括1和本身）</p>
-            </div>
+                
+                <!-- Options Grid -->
+                <div id="optionsGrid" class="grid grid-cols-4 md:grid-cols-6 gap-3 mb-6">
+                    <!-- Options will be generated here -->
+                </div>
 
-            <!-- 候選數字區 -->
-            <div class="mb-8">
-                <h3 class="text-xl font-semibold text-gray-700 mb-4 text-center">🔢 候選數字</h3>
-                <div id="candidates-container" class="grid grid-cols-3 md:grid-cols-6 gap-3">
-                    <!-- 動態生成候選數字 -->
+                <!-- Action Buttons -->
+                <div class="flex justify-center space-x-4">
+                    <button id="checkBtn" onclick="checkAnswer()" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-8 rounded-lg transition duration-200">確認答案</button>
+                    <button id="nextBtn" onclick="nextQuestion()" style="display: none;" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg transition duration-200">下一題</button>
                 </div>
             </div>
 
-            <!-- 答案放置區 -->
-            <div class="mb-8">
-                <h3 class="text-xl font-semibold text-gray-700 mb-4 text-center">📝 答案區域</h3>
-                <div id="answer-zones" class="mb-6">
-                    <!-- 動態生成放置區域 -->
-                </div>
-                <div class="text-center">
-                    <button id="clear-btn" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition-colors">
-                        清空答案
-                    </button>
-                </div>
-            </div>
-
-            <!-- 操作按鈕 -->
-            <div class="flex justify-center space-x-4">
-                <button id="check-btn" class="bg-blue-500 hover:bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold transition-colors">
-                    檢查答案
-                </button>
-                <button id="next-btn" class="bg-purple-500 hover:bg-purple-600 text-white px-8 py-3 rounded-lg font-semibold transition-colors hidden">
-                    下一題
-                </button>
-            </div>
-
-            <!-- 答案反饋 -->
-            <div id="feedback" class="mt-6 text-center hidden">
-                <div id="feedback-message" class="text-lg font-semibold mb-4"></div>
-                <div id="correct-answer" class="text-gray-600"></div>
+            <!-- Result Display -->
+            <div id="resultDisplay" style="display: none;" class="bg-white rounded-xl shadow-lg p-6 mb-6">
+                <div id="resultMessage" class="text-center text-lg font-semibold mb-4"></div>
+                <div id="correctFactors" class="text-center text-gray-600"></div>
             </div>
         </div>
 
-        <!-- 結果頁面 -->
-        <div id="result-area" class="bg-white rounded-xl shadow-lg p-8 text-center hidden">
-            <div class="mb-6">
-                <div class="text-6xl mb-4" id="result-emoji">🎉</div>
-                <h2 class="text-3xl font-bold text-gray-800 mb-4" id="result-title">遊戲結束！</h2>
-                <div class="text-xl text-gray-600 mb-6">
-                    你的最終得分：<span id="final-score" class="font-bold text-blue-600">0</span> 分
+        <!-- Final Results Screen -->
+        <div id="finalScreen" style="display: none;">
+            <div class="bg-white rounded-xl shadow-lg p-8 text-center">
+                <h2 class="text-3xl font-bold text-green-600 mb-6">🎉 挑戰完成！</h2>
+                <div class="text-xl mb-4">
+                    <span class="font-semibold text-gray-700">玩家：</span>
+                    <span id="finalPlayerName" class="text-indigo-600 font-bold"></span>
                 </div>
-                <div id="performance-message" class="text-lg text-gray-600 mb-6"></div>
+                <div class="text-xl mb-6">
+                    <span class="font-semibold text-gray-700">總完成時間：</span>
+                    <span id="finalTime" class="text-red-600 font-bold"></span>
+                </div>
+                <div class="text-lg text-gray-600 mb-6">
+                    恭喜你完成了所有 10 道因數題目！
+                </div>
+                <button onclick="restartGame()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-8 rounded-lg transition duration-200 text-lg">重新開始</button>
             </div>
-            <button id="restart-btn" class="bg-green-500 hover:bg-green-600 text-white px-8 py-3 rounded-lg font-semibold transition-colors">
-                重新開始
-            </button>
         </div>
     </div>
 
-    <!-- 頁腳設計者資訊 -->
-    <footer class="bg-gray-100 py-4 mt-8">
-        <div class="container mx-auto px-4 text-center">
-            <div class="text-sm text-gray-600">
-                👩‍🏫 吳曉雯老師設計
-            </div>
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-4 mt-12">
+        <div class="container mx-auto text-center">
+            <p class="text-lg">吳曉雯老師製作</p>
         </div>
     </footer>
 
     <script>
-        class FactorGame {
-            constructor() {
-                this.currentQuestion = 0;
-                this.totalQuestions = 10;
-                this.score = 0;
-                this.timeElapsed = 0; // 每題從0秒開始累計
-                this.totalGameTime = 0; // 總遊戲時間
-                this.gameStartTime = 0; // 遊戲開始時間
-                this.timer = null;
-                this.gameStarted = false;
-                this.questions = [];
-                this.currentFactors = [];
-                this.playerName = '';
-                
-                this.initializeElements();
-                this.generateQuestions();
-                this.bindEvents();
-            }
+        // Game variables
+        let gameState = {
+            userName: '',
+            startTime: 0,
+            currentQuestion: 1,
+            totalQuestions: 10,
+            currentNumber: 0,
+            correctFactors: [],
+            selectedFactors: new Set(),
+            timerInterval: null,
+            isProcessing: false
+        };
 
-            initializeElements() {
-                this.startBtn = document.getElementById('start-btn');
-                this.gameArea = document.getElementById('game-area');
-                this.resultArea = document.getElementById('result-area');
-                this.nameInputArea = document.getElementById('name-input-area');
-                this.playerNameInput = document.getElementById('player-name');
-                this.timerDisplay = document.getElementById('timer');
-                this.scoreDisplay = document.getElementById('score');
-                this.questionCounter = document.getElementById('question-counter');
-                this.currentNumberDisplay = document.getElementById('current-number');
-                this.answerZones = document.getElementById('answer-zones');
-                this.candidatesContainer = document.getElementById('candidates-container');
-                this.clearBtn = document.getElementById('clear-btn');
-                this.checkBtn = document.getElementById('check-btn');
-                this.nextBtn = document.getElementById('next-btn');
-                this.feedback = document.getElementById('feedback');
-                this.feedbackMessage = document.getElementById('feedback-message');
-                this.correctAnswer = document.getElementById('correct-answer');
-                this.finalScore = document.getElementById('final-score');
-                this.resultTitle = document.getElementById('result-title');
-                this.resultEmoji = document.getElementById('result-emoji');
-                this.performanceMessage = document.getElementById('performance-message');
-                this.restartBtn = document.getElementById('restart-btn');
-            }
-
-            generateQuestions() {
-                // 適合五年級的數字，有不同數量的因數
-                const numbers = [12, 18, 24, 16, 20, 15, 30, 36, 28, 32];
-                this.questions = numbers.slice(0, this.totalQuestions);
-            }
-
-            findFactors(num) {
-                const factors = [];
-                for (let i = 1; i <= num; i++) {
-                    if (num % i === 0) {
-                        factors.push(i);
-                    }
-                }
-                return factors.sort((a, b) => a - b);
-            }
-
-            bindEvents() {
-                this.startBtn.addEventListener('click', () => this.startGame());
-                this.checkBtn.addEventListener('click', () => this.checkAnswer());
-                this.nextBtn.addEventListener('click', () => this.nextQuestion());
-                this.clearBtn.addEventListener('click', () => this.clearAnswers());
-                this.restartBtn.addEventListener('click', () => this.restartGame());
-            }
-
-            startGame() {
-                // 檢查是否輸入姓名
-                this.playerName = this.playerNameInput.value.trim();
-                if (!this.playerName) {
-                    alert('請先輸入你的姓名！');
-                    this.playerNameInput.focus();
-                    return;
-                }
-                
-                this.gameStarted = true;
-                this.currentQuestion = 0;
-                this.score = 0;
-                this.timeElapsed = 0;
-                this.gameStartTime = Date.now();
-                
-                this.startBtn.classList.add('hidden');
-                this.nameInputArea.classList.add('hidden');
-                this.gameArea.classList.remove('hidden');
-                this.resultArea.classList.add('hidden');
-                
-                this.startTimer();
-                this.loadQuestion();
-            }
-
-            startTimer() {
-                this.timer = setInterval(() => {
-                    this.timeElapsed++;
-                    this.updateTimerDisplay();
-                }, 1000);
-            }
-
-            updateTimerDisplay() {
-                const minutes = Math.floor(this.timeElapsed / 60);
-                const seconds = this.timeElapsed % 60;
-                this.timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-            }
-
-            loadQuestion() {
-                const number = this.questions[this.currentQuestion];
-                this.currentFactors = this.findFactors(number);
-                
-                this.currentNumberDisplay.textContent = number;
-                this.questionCounter.textContent = `${this.currentQuestion + 1}/${this.totalQuestions}`;
-                
-                this.createAnswerZones();
-                this.createCandidateNumbers(number);
-                this.hideElements();
-            }
-
-            createAnswerZones() {
-                this.answerZones.innerHTML = '';
-                
-                // 創建一個大的答案區域
-                const zone = document.createElement('div');
-                zone.className = 'drop-zone min-h-32 p-4 rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 flex flex-wrap gap-2 items-start';
-                zone.innerHTML = '<div class="w-full text-center text-gray-400 text-lg font-semibold">將因數拖曳到這裡</div>';
-                zone.dataset.answers = '[]'; // 儲存答案的陣列
-                
-                this.setupDropZone(zone);
-                this.answerZones.appendChild(zone);
-            }
-
-            createCandidateNumbers(targetNumber) {
-                this.candidatesContainer.innerHTML = '';
-                
-                // 生成候選數字：包含正確因數和一些干擾項
-                const candidates = new Set();
-                
-                // 添加正確因數
-                this.currentFactors.forEach(factor => candidates.add(factor));
-                
-                // 添加一些干擾項
-                const distractors = [];
-                for (let i = 1; i <= targetNumber; i++) {
-                    if (!this.currentFactors.includes(i)) {
-                        distractors.push(i);
-                    }
-                }
-                
-                // 隨機選擇一些干擾項
-                const shuffledDistractors = distractors.sort(() => Math.random() - 0.5);
-                const numDistractors = Math.min(6, shuffledDistractors.length);
-                for (let i = 0; i < numDistractors; i++) {
-                    candidates.add(shuffledDistractors[i]);
-                }
-                
-                // 轉換為陣列並由小到大排序
-                const candidateArray = Array.from(candidates).sort((a, b) => a - b);
-                
-                // 創建候選數字元素
-                candidateArray.forEach((num, index) => {
-                    const candidate = document.createElement('div');
-                    candidate.className = 'candidate-number draggable bg-blue-100 hover:bg-blue-200 border-2 border-blue-300 rounded-lg p-3 text-center text-lg font-bold text-blue-800 cursor-grab';
-                    candidate.textContent = num;
-                    candidate.dataset.number = num;
-                    candidate.draggable = true;
-                    candidate.style.animationDelay = `${index * 0.1}s`;
-                    
-                    this.setupDraggable(candidate);
-                    this.candidatesContainer.appendChild(candidate);
-                });
-            }
-
-            setupDraggable(element) {
-                element.addEventListener('dragstart', (e) => {
-                    e.dataTransfer.setData('text/plain', element.dataset.number);
-                    element.classList.add('dragging');
-                });
-                
-                element.addEventListener('dragend', () => {
-                    element.classList.remove('dragging');
-                });
-            }
-
-            setupDropZone(zone) {
-                zone.addEventListener('dragover', (e) => {
-                    e.preventDefault();
-                    zone.classList.add('drag-over');
-                });
-                
-                zone.addEventListener('dragleave', () => {
-                    zone.classList.remove('drag-over');
-                });
-                
-                zone.addEventListener('drop', (e) => {
-                    e.preventDefault();
-                    zone.classList.remove('drag-over');
-                    
-                    const number = parseInt(e.dataTransfer.getData('text/plain'));
-                    if (number) {
-                        const answers = JSON.parse(zone.dataset.answers);
-                        
-                        // 檢查是否已經存在
-                        if (!answers.includes(number)) {
-                            answers.push(number);
-                            zone.dataset.answers = JSON.stringify(answers);
-                            this.updateAnswerDisplay(zone, answers);
-                            
-                            // 隱藏對應的候選數字
-                            const candidate = this.candidatesContainer.querySelector(`[data-number="${number}"]`);
-                            if (candidate) {
-                                candidate.style.opacity = '0.3';
-                                candidate.style.pointerEvents = 'none';
-                            }
-                        }
-                    }
-                });
+        function startGame() {
+            const nameInput = document.getElementById('userName');
+            const userName = nameInput.value.trim();
+            
+            if (!userName) {
+                alert('請輸入姓名！');
+                return;
             }
             
-            updateAnswerDisplay(zone, answers) {
-                if (answers.length === 0) {
-                    zone.innerHTML = '<div class="w-full text-center text-gray-400 text-lg font-semibold">將因數拖曳到這裡</div>';
-                } else {
-                    const sortedAnswers = [...answers].sort((a, b) => a - b);
-                    zone.innerHTML = sortedAnswers.map(num => 
-                        `<div class="bg-blue-100 border-2 border-blue-300 rounded-lg px-3 py-2 text-blue-800 font-bold cursor-pointer hover:bg-blue-200" data-answer="${num}">${num}</div>`
-                    ).join('');
-                    
-                    // 為每個答案添加點擊移除功能
-                    zone.querySelectorAll('[data-answer]').forEach(answerEl => {
-                        answerEl.addEventListener('click', () => {
-                            const numToRemove = parseInt(answerEl.dataset.answer);
-                            const currentAnswers = JSON.parse(zone.dataset.answers);
-                            const newAnswers = currentAnswers.filter(n => n !== numToRemove);
-                            zone.dataset.answers = JSON.stringify(newAnswers);
-                            this.updateAnswerDisplay(zone, newAnswers);
-                            
-                            // 恢復對應的候選數字
-                            const candidate = this.candidatesContainer.querySelector(`[data-number="${numToRemove}"]`);
-                            if (candidate) {
-                                candidate.style.opacity = '1';
-                                candidate.style.pointerEvents = 'auto';
-                            }
-                        });
-                    });
-                }
+            // Clear any existing timer
+            if (gameState.timerInterval) {
+                clearInterval(gameState.timerInterval);
+                gameState.timerInterval = null;
             }
+            
+            // Initialize game state
+            gameState.userName = userName;
+            gameState.startTime = Date.now();
+            gameState.currentQuestion = 1;
+            gameState.selectedFactors.clear();
+            gameState.isProcessing = false;
+            
+            // Show game screen
+            document.getElementById('setupScreen').style.display = 'none';
+            document.getElementById('gameScreen').style.display = 'block';
+            document.getElementById('finalScreen').style.display = 'none';
+            
+            // Set player name
+            document.getElementById('displayName').textContent = userName;
+            
+            // Start timer
+            startTimer();
+            
+            // Generate first question
+            generateQuestion();
+        }
 
-            clearAnswers() {
-                const zone = this.answerZones.querySelector('.drop-zone');
-                if (zone) {
-                    const answers = JSON.parse(zone.dataset.answers);
-                    
-                    // 恢復所有候選數字
-                    answers.forEach(number => {
-                        const candidate = this.candidatesContainer.querySelector(`[data-number="${number}"]`);
-                        if (candidate) {
-                            candidate.style.opacity = '1';
-                            candidate.style.pointerEvents = 'auto';
+        function startTimer() {
+            // Ensure no duplicate timers
+            if (gameState.timerInterval) {
+                clearInterval(gameState.timerInterval);
+            }
+            
+            gameState.timerInterval = setInterval(() => {
+                if (gameState.startTime > 0) {
+                    const elapsed = Math.floor((Date.now() - gameState.startTime) / 1000);
+                    const timerElement = document.getElementById('timer');
+                    if (timerElement) {
+                        timerElement.textContent = elapsed + '秒';
+                    }
+                }
+            }, 1000);
+        }
+
+        function generateQuestion() {
+            if (gameState.isProcessing) return;
+            gameState.isProcessing = true;
+            
+            try {
+                // Generate random number between 6 and 50
+                gameState.currentNumber = Math.floor(Math.random() * 45) + 6;
+                document.getElementById('currentNumber').textContent = gameState.currentNumber;
+                
+                // Update question counter
+                document.getElementById('questionCounter').textContent = 
+                    gameState.currentQuestion + '/' + gameState.totalQuestions;
+                
+                // Find all factors efficiently
+                gameState.correctFactors = [];
+                for (let i = 1; i <= gameState.currentNumber; i++) {
+                    if (gameState.currentNumber % i === 0) {
+                        gameState.correctFactors.push(i);
+                    }
+                }
+                
+                // Generate options with safety limit
+                let options = [...gameState.correctFactors];
+                let attempts = 0;
+                const maxAttempts = 50; // Prevent infinite loop
+                
+                while (options.length < 12 && attempts < maxAttempts) {
+                    let wrongOption = Math.floor(Math.random() * gameState.currentNumber) + 1;
+                    if (!options.includes(wrongOption)) {
+                        options.push(wrongOption);
+                    }
+                    attempts++;
+                }
+                
+                // If we couldn't get 12 options, just use what we have
+                if (options.length < 12) {
+                    // Add some numbers from 1 to currentNumber that aren't already included
+                    for (let i = 1; i <= gameState.currentNumber && options.length < 12; i++) {
+                        if (!options.includes(i)) {
+                            options.push(i);
                         }
-                    });
-                    
-                    // 清空答案區域
-                    zone.dataset.answers = '[]';
-                    this.updateAnswerDisplay(zone, []);
-                    zone.classList.remove('correct-answer', 'incorrect-answer');
+                    }
                 }
-            }
-
-            hideElements() {
-                this.feedback.classList.add('hidden');
-                this.nextBtn.classList.add('hidden');
-                this.checkBtn.classList.remove('hidden');
                 
-                // 清除之前的樣式
-                const zone = this.answerZones.querySelector('.drop-zone');
-                if (zone) {
-                    zone.classList.remove('correct-answer', 'incorrect-answer');
-                }
-            }
-
-            checkAnswer() {
-                const zone = this.answerZones.querySelector('.drop-zone');
-                const userAnswers = JSON.parse(zone.dataset.answers);
+                // Sort options
+                options.sort((a, b) => a - b);
                 
-                // 檢查答案正確性
-                const correctAnswers = this.currentFactors.slice().sort((a, b) => a - b);
-                const sortedUserAnswers = userAnswers.slice().sort((a, b) => a - b);
+                // Clear previous selections
+                gameState.selectedFactors.clear();
                 
-                const isCompletelyCorrect = JSON.stringify(correctAnswers) === JSON.stringify(sortedUserAnswers);
+                // Create option buttons
+                const grid = document.getElementById('optionsGrid');
+                grid.innerHTML = '';
                 
-                // 計算正確的答案數量
-                const correctCount = userAnswers.filter(answer => this.currentFactors.includes(answer)).length;
-
-                // 視覺反饋
-                if (isCompletelyCorrect) {
-                    zone.classList.add('correct-answer');
-                    zone.classList.remove('incorrect-answer');
-                    this.score += 10;
-                    this.feedbackMessage.textContent = '🎉 完全正確！太棒了！';
-                    this.feedbackMessage.className = 'text-lg font-semibold mb-4 text-green-600';
-                } else {
-                    zone.classList.add('incorrect-answer');
-                    zone.classList.remove('correct-answer');
-                    const partialScore = Math.floor((correctCount / this.currentFactors.length) * 5);
-                    this.score += partialScore;
-                    this.feedbackMessage.textContent = `😊 部分正確！獲得 ${partialScore} 分`;
-                    this.feedbackMessage.className = 'text-lg font-semibold mb-4 text-orange-600';
-                }
-
-                this.correctAnswer.textContent = `正確答案：${this.currentFactors.join(', ')}`;
-                this.scoreDisplay.textContent = this.score;
-                
-                this.feedback.classList.remove('hidden');
-                this.checkBtn.classList.add('hidden');
-                this.nextBtn.classList.remove('hidden');
-                
-                // 停止計時器
-                clearInterval(this.timer);
-                
-                // 禁用拖曳功能
-                const candidates = this.candidatesContainer.querySelectorAll('.draggable');
-                candidates.forEach(candidate => {
-                    candidate.draggable = false;
-                    candidate.style.opacity = '0.6';
-                    candidate.style.cursor = 'not-allowed';
+                options.forEach(option => {
+                    const button = document.createElement('button');
+                    button.className = 'bg-gray-100 hover:bg-gray-200 border-2 border-gray-300 rounded-lg py-3 px-4 text-lg font-semibold transition duration-200';
+                    button.textContent = option;
+                    button.onclick = () => toggleOption(button, option);
+                    grid.appendChild(button);
                 });
-            }
-
-
-
-
-
-            nextQuestion() {
-                this.currentQuestion++;
-                if (this.currentQuestion >= this.totalQuestions) {
-                    this.endGame();
-                } else {
-                    // 重置計時器為0秒開始
-                    clearInterval(this.timer);
-                    this.timeElapsed = 0;
-                    this.updateTimerDisplay();
-                    this.startTimer();
-                    this.loadQuestion();
-                }
-            }
-
-            endGame() {
-                clearInterval(this.timer);
                 
-                // 計算總遊戲時間
-                this.totalGameTime = Math.floor((Date.now() - this.gameStartTime) / 1000);
+                // Reset UI
+                document.getElementById('resultDisplay').style.display = 'none';
+                document.getElementById('checkBtn').style.display = 'inline-block';
+                document.getElementById('nextBtn').style.display = 'none';
                 
-                this.gameArea.classList.add('hidden');
-                this.resultArea.classList.remove('hidden');
-                
-                this.finalScore.textContent = this.score;
-                
-                // 格式化總時間
-                const totalMinutes = Math.floor(this.totalGameTime / 60);
-                const totalSeconds = this.totalGameTime % 60;
-                const timeString = `${totalMinutes.toString().padStart(2, '0')}:${totalSeconds.toString().padStart(2, '0')}`;
-                
-                // 根據得分給出不同的反饋
-                if (this.score >= 80) {
-                    this.resultEmoji.textContent = '🏆';
-                    this.resultTitle.textContent = `${this.playerName}，太厲害了！`;
-                    this.performanceMessage.textContent = `你是因數大師！數學能力超強！\n總用時：${timeString}`;
-                } else if (this.score >= 60) {
-                    this.resultEmoji.textContent = '🎉';
-                    this.resultTitle.textContent = `${this.playerName}，表現很好！`;
-                    this.performanceMessage.textContent = `你對因數的理解很不錯，繼續加油！\n總用時：${timeString}`;
-                } else if (this.score >= 40) {
-                    this.resultEmoji.textContent = '😊';
-                    this.resultTitle.textContent = `${this.playerName}，不錯的嘗試！`;
-                    this.performanceMessage.textContent = `還有進步空間，多練習就會更好！\n總用時：${timeString}`;
-                } else {
-                    this.resultEmoji.textContent = '💪';
-                    this.resultTitle.textContent = `${this.playerName}，繼續努力！`;
-                    this.performanceMessage.textContent = `別灰心，多練習找因數，你一定會進步的！\n總用時：${timeString}`;
-                }
-            }
-
-            restartGame() {
-                this.gameStarted = false;
-                clearInterval(this.timer);
-                
-                this.resultArea.classList.add('hidden');
-                this.startBtn.classList.remove('hidden');
-                this.nameInputArea.classList.remove('hidden');
-                
-                // 重置顯示
-                this.scoreDisplay.textContent = '0';
-                this.questionCounter.textContent = '1/10';
-                this.timerDisplay.textContent = '00:00';
-                this.playerNameInput.value = '';
-                
-                // 重新生成題目
-                this.generateQuestions();
+            } catch (error) {
+                console.error('Error generating question:', error);
+            } finally {
+                gameState.isProcessing = false;
             }
         }
 
-        // 初始化遊戲
-        document.addEventListener('DOMContentLoaded', () => {
-            new FactorGame();
-        });
+        function toggleOption(button, value) {
+            if (gameState.isProcessing) return;
+            
+            if (gameState.selectedFactors.has(value)) {
+                gameState.selectedFactors.delete(value);
+                button.className = 'bg-gray-100 hover:bg-gray-200 border-2 border-gray-300 rounded-lg py-3 px-4 text-lg font-semibold transition duration-200';
+            } else {
+                gameState.selectedFactors.add(value);
+                button.className = 'bg-indigo-500 hover:bg-indigo-600 text-white border-2 border-indigo-500 rounded-lg py-3 px-4 text-lg font-semibold transition duration-200';
+            }
+        }
+
+        function checkAnswer() {
+            if (gameState.isProcessing) return;
+            gameState.isProcessing = true;
+            
+            try {
+                // Convert sets to sorted arrays for comparison
+                const selectedArray = Array.from(gameState.selectedFactors).sort((a, b) => a - b);
+                const correctArray = [...gameState.correctFactors].sort((a, b) => a - b);
+                
+                // Check if answer is correct
+                const isCorrect = selectedArray.length === correctArray.length && 
+                                selectedArray.every((val, index) => val === correctArray[index]);
+                
+                // Show result
+                const resultDiv = document.getElementById('resultDisplay');
+                const messageDiv = document.getElementById('resultMessage');
+                const factorsDiv = document.getElementById('correctFactors');
+                
+                if (isCorrect) {
+                    messageDiv.innerHTML = '<span class="text-green-600">✓ 正確！</span>';
+                    messageDiv.className = 'text-center text-lg font-semibold mb-4 text-green-600';
+                    
+                    // Show next button
+                    document.getElementById('checkBtn').style.display = 'none';
+                    document.getElementById('nextBtn').style.display = 'inline-block';
+                } else {
+                    messageDiv.innerHTML = '<span class="text-red-600">✗ 錯誤！</span><br><span class="text-sm text-gray-600">請重新選擇正確答案</span>';
+                    messageDiv.className = 'text-center text-lg font-semibold mb-4 text-red-600';
+                }
+                
+                factorsDiv.textContent = gameState.currentNumber + ' 的正確因數：' + correctArray.join(', ');
+                resultDiv.style.display = 'block';
+                
+            } catch (error) {
+                console.error('Error checking answer:', error);
+            } finally {
+                gameState.isProcessing = false;
+            }
+        }
+
+        function nextQuestion() {
+            if (gameState.isProcessing) return;
+            
+            gameState.currentQuestion++;
+            
+            if (gameState.currentQuestion > gameState.totalQuestions) {
+                showFinalResults();
+            } else {
+                generateQuestion();
+            }
+        }
+
+        function showFinalResults() {
+            try {
+                // Stop timer
+                if (gameState.timerInterval) {
+                    clearInterval(gameState.timerInterval);
+                    gameState.timerInterval = null;
+                }
+                
+                // Calculate total time
+                const totalTime = Math.floor((Date.now() - gameState.startTime) / 1000);
+                const minutes = Math.floor(totalTime / 60);
+                const seconds = totalTime % 60;
+                const timeString = minutes > 0 ? minutes + '分' + seconds + '秒' : seconds + '秒';
+                
+                // Show final screen
+                document.getElementById('gameScreen').style.display = 'none';
+                document.getElementById('finalScreen').style.display = 'block';
+                
+                // Set final results
+                document.getElementById('finalPlayerName').textContent = gameState.userName;
+                document.getElementById('finalTime').textContent = timeString;
+                
+            } catch (error) {
+                console.error('Error showing final results:', error);
+            }
+        }
+
+        function restartGame() {
+            try {
+                // Stop timer
+                if (gameState.timerInterval) {
+                    clearInterval(gameState.timerInterval);
+                    gameState.timerInterval = null;
+                }
+                
+                // Reset game state
+                gameState.currentQuestion = 1;
+                gameState.selectedFactors.clear();
+                gameState.isProcessing = false;
+                gameState.startTime = 0;
+                
+                // Show setup screen
+                document.getElementById('finalScreen').style.display = 'none';
+                document.getElementById('setupScreen').style.display = 'block';
+                
+                // Clear name input
+                document.getElementById('userName').value = '';
+                
+            } catch (error) {
+                console.error('Error restarting game:', error);
+            }
+        }
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97ee11007164a9c8',t:'MTc1NzgzMzg0Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97f17279b5e78f24',t:'MTc1Nzg2OTI5Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
