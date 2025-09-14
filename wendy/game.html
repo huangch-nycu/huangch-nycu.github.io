@@ -32,18 +32,22 @@
         <div id="gameScreen" style="display: none;">
             <!-- Progress and Timer -->
             <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
-                <div class="flex justify-between items-center">
+                <div class="flex justify-between items-center flex-wrap gap-4">
                     <div class="text-lg">
                         <span class="font-semibold text-gray-700">玩家：</span>
                         <span id="displayName" class="text-indigo-600 font-bold"></span>
                     </div>
                     <div class="text-lg">
                         <span class="font-semibold text-gray-700">題目：</span>
-                        <span id="questionCounter" class="text-blue-600 font-bold">1/10</span>
+                        <span id="questionCounter" class="text-blue-600 font-bold">1/12</span>
                     </div>
-                    <div class="text-lg">
-                        <span class="font-semibold text-gray-700">總時間：</span>
-                        <span id="timer" class="text-red-600 font-bold">0秒</span>
+                    <div class="text-xl">
+                        <span class="font-semibold text-gray-700">本題用時：</span>
+                        <span id="currentQuestionTimer" class="text-blue-600 font-bold text-3xl">0秒</span>
+                    </div>
+                    <div class="text-xl">
+                        <span class="font-semibold text-gray-700">累計用時：</span>
+                        <span id="timer" class="text-red-600 font-bold text-3xl">0秒</span>
                     </div>
                 </div>
             </div>
@@ -73,6 +77,16 @@
             </div>
         </div>
 
+        <!-- Question Results History -->
+        <div id="resultsHistory" style="display: none;">
+            <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">答題記錄</h3>
+                <div id="resultsList" class="space-y-3">
+                    <!-- Results will be appended here -->
+                </div>
+            </div>
+        </div>
+
         <!-- Final Results Screen -->
         <div id="finalScreen" style="display: none;">
             <div class="bg-white rounded-xl shadow-lg p-8 text-center">
@@ -86,7 +100,7 @@
                     <span id="finalTime" class="text-red-600 font-bold"></span>
                 </div>
                 <div class="text-lg text-gray-600 mb-6">
-                    恭喜你完成了所有 10 道因數題目！
+                    恭喜你完成了所有 12 道因數題目！
                 </div>
                 <button onclick="restartGame()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-8 rounded-lg transition duration-200 text-lg">重新開始</button>
             </div>
@@ -106,12 +120,16 @@
             userName: '',
             startTime: 0,
             currentQuestion: 1,
-            totalQuestions: 10,
+            totalQuestions: 12,
+            questionNumbers: [20,24,22,36,18,10,45,8,12,16,15,60],
             currentNumber: 0,
             correctFactors: [],
             selectedFactors: new Set(),
             timerInterval: null,
-            isProcessing: false
+            isProcessing: false,
+            questionStartTime: 0,
+            totalActiveTime: 0,
+            questionTimes: []
         };
 
         function startGame() {
@@ -135,6 +153,9 @@
             gameState.currentQuestion = 1;
             gameState.selectedFactors.clear();
             gameState.isProcessing = false;
+            gameState.totalActiveTime = 0;
+            gameState.questionTimes = [];
+            gameState.questionStartTime = 0;
             
             // Show game screen
             document.getElementById('setupScreen').style.display = 'none';
@@ -158,14 +179,40 @@
             }
             
             gameState.timerInterval = setInterval(() => {
-                if (gameState.startTime > 0) {
-                    const elapsed = Math.floor((Date.now() - gameState.startTime) / 1000);
-                    const timerElement = document.getElementById('timer');
-                    if (timerElement) {
-                        timerElement.textContent = elapsed + '秒';
-                    }
+                if (gameState.questionStartTime > 0) {
+                    // Only count time when actively answering a question
+                    const currentQuestionTime = Math.floor((Date.now() - gameState.questionStartTime) / 1000);
+                    const totalTime = gameState.totalActiveTime + currentQuestionTime;
+                    updateTimerDisplay(totalTime, currentQuestionTime);
+                } else {
+                    // Show accumulated time when between questions
+                    updateTimerDisplay(gameState.totalActiveTime, 0);
                 }
             }, 1000);
+        }
+
+        function updateTimerDisplay(totalTimeInSeconds, currentQuestionTimeInSeconds) {
+            // Update total time
+            const totalMinutes = Math.floor(totalTimeInSeconds / 60);
+            const totalSeconds = totalTimeInSeconds % 60;
+            const totalTimeString = totalMinutes > 0 ? totalMinutes + '分' + totalSeconds + '秒' : totalSeconds + '秒';
+            
+            const timerElement = document.getElementById('timer');
+            if (timerElement) {
+                timerElement.textContent = totalTimeString;
+            }
+            
+            // Update current question time (only if we're actively timing)
+            if (gameState.questionStartTime > 0) {
+                const currentMinutes = Math.floor(currentQuestionTimeInSeconds / 60);
+                const currentSeconds = currentQuestionTimeInSeconds % 60;
+                const currentTimeString = currentMinutes > 0 ? currentMinutes + '分' + currentSeconds + '秒' : currentSeconds + '秒';
+                
+                const currentQuestionTimerElement = document.getElementById('currentQuestionTimer');
+                if (currentQuestionTimerElement) {
+                    currentQuestionTimerElement.textContent = currentTimeString;
+                }
+            }
         }
 
         function generateQuestion() {
@@ -173,9 +220,18 @@
             gameState.isProcessing = true;
             
             try {
-                // Generate random number between 6 and 50
-                gameState.currentNumber = Math.floor(Math.random() * 45) + 6;
+                // Use predefined question number
+                gameState.currentNumber = gameState.questionNumbers[gameState.currentQuestion - 1];
                 document.getElementById('currentNumber').textContent = gameState.currentNumber;
+                
+                // Start timing this question
+                gameState.questionStartTime = Date.now();
+                
+                // Reset the current question timer display
+                const currentQuestionTimerElement = document.getElementById('currentQuestionTimer');
+                if (currentQuestionTimerElement) {
+                    currentQuestionTimerElement.textContent = '0秒';
+                }
                 
                 // Update question counter
                 document.getElementById('questionCounter').textContent = 
@@ -273,25 +329,87 @@
                 const factorsDiv = document.getElementById('correctFactors');
                 
                 if (isCorrect) {
-                    messageDiv.innerHTML = '<span class="text-green-600">✓ 正確！</span>';
-                    messageDiv.className = 'text-center text-lg font-semibold mb-4 text-green-600';
+                    // Calculate question time
+                    const questionTime = Math.floor((Date.now() - gameState.questionStartTime) / 1000);
+                    gameState.totalActiveTime += questionTime;
+                    gameState.questionTimes.push(questionTime);
                     
-                    // Show next button
-                    document.getElementById('checkBtn').style.display = 'none';
-                    document.getElementById('nextBtn').style.display = 'inline-block';
+                    // Update the top timer to show the final question time
+                    const minutes = Math.floor(questionTime / 60);
+                    const seconds = questionTime % 60;
+                    const questionTimeString = minutes > 0 ? minutes + '分' + seconds + '秒' : seconds + '秒';
+                    
+                    const currentQuestionTimerElement = document.getElementById('currentQuestionTimer');
+                    if (currentQuestionTimerElement) {
+                        currentQuestionTimerElement.textContent = questionTimeString;
+                    }
+                    
+                    // Stop timing this question (user is now taking a break)
+                    gameState.questionStartTime = 0;
+                    
+                    // Show question result screen
+                    showQuestionResult(questionTime);
                 } else {
                     messageDiv.innerHTML = '<span class="text-red-600">✗ 錯誤！</span><br><span class="text-sm text-gray-600">請重新選擇正確答案</span>';
                     messageDiv.className = 'text-center text-lg font-semibold mb-4 text-red-600';
+                    
+                    factorsDiv.textContent = gameState.currentNumber + ' 的正確因數：' + correctArray.join(', ');
+                    resultDiv.style.display = 'block';
                 }
-                
-                factorsDiv.textContent = gameState.currentNumber + ' 的正確因數：' + correctArray.join(', ');
-                resultDiv.style.display = 'block';
+
                 
             } catch (error) {
                 console.error('Error checking answer:', error);
             } finally {
                 gameState.isProcessing = false;
             }
+        }
+
+        function showQuestionResult(questionTime) {
+            const minutes = Math.floor(questionTime / 60);
+            const seconds = questionTime % 60;
+            const questionTimeString = minutes > 0 ? minutes + '分' + seconds + '秒' : seconds + '秒';
+            
+            const totalMinutes = Math.floor(gameState.totalActiveTime / 60);
+            const totalSeconds = gameState.totalActiveTime % 60;
+            const totalTimeString = totalMinutes > 0 ? totalMinutes + '分' + totalSeconds + '秒' : totalSeconds + '秒';
+            
+            // Create result entry
+            const resultEntry = document.createElement('div');
+            resultEntry.className = 'bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg';
+            resultEntry.innerHTML = `
+                <div class="flex justify-between items-center">
+                    <div>
+                        <span class="font-semibold text-green-700">第 ${gameState.currentQuestion} 題：${gameState.currentNumber} 的因數</span>
+                        <span class="text-green-600 ml-2">✓ 正確</span>
+                    </div>
+                    <div class="text-right text-sm text-gray-600">
+                        <div class="text-lg">本題用時：<span class="font-semibold text-blue-600 text-xl">${questionTimeString}</span></div>
+                        <div class="text-lg">累計用時：<span class="font-semibold text-red-600 text-xl">${totalTimeString}</span></div>
+                    </div>
+                </div>
+            `;
+            
+            // Append to results list
+            const resultsList = document.getElementById('resultsList');
+            resultsList.appendChild(resultEntry);
+            
+            // Show results history
+            document.getElementById('resultsHistory').style.display = 'block';
+            
+            // Show success message in result display
+            const resultDiv = document.getElementById('resultDisplay');
+            const messageDiv = document.getElementById('resultMessage');
+            const factorsDiv = document.getElementById('correctFactors');
+            
+            messageDiv.innerHTML = `<span class="text-green-600">✓ 正確！</span> 本題用時：<span class="text-xl font-bold text-blue-600">${questionTimeString}</span>`;
+            messageDiv.className = 'text-center text-lg font-semibold mb-4 text-green-600';
+            factorsDiv.textContent = `${gameState.currentNumber} 的正確因數：${gameState.correctFactors.join(', ')}`;
+            resultDiv.style.display = 'block';
+            
+            // Show next button
+            document.getElementById('checkBtn').style.display = 'none';
+            document.getElementById('nextBtn').style.display = 'inline-block';
         }
 
         function nextQuestion() {
@@ -302,6 +420,9 @@
             if (gameState.currentQuestion > gameState.totalQuestions) {
                 showFinalResults();
             } else {
+                // Reset buttons for new question
+                document.getElementById('checkBtn').style.display = 'inline-block';
+                document.getElementById('nextBtn').style.display = 'none';
                 generateQuestion();
             }
         }
@@ -314,10 +435,9 @@
                     gameState.timerInterval = null;
                 }
                 
-                // Calculate total time
-                const totalTime = Math.floor((Date.now() - gameState.startTime) / 1000);
-                const minutes = Math.floor(totalTime / 60);
-                const seconds = totalTime % 60;
+                // Use accumulated active time instead of total elapsed time
+                const minutes = Math.floor(gameState.totalActiveTime / 60);
+                const seconds = gameState.totalActiveTime % 60;
                 const timeString = minutes > 0 ? minutes + '分' + seconds + '秒' : seconds + '秒';
                 
                 // Show final screen
@@ -346,6 +466,13 @@
                 gameState.selectedFactors.clear();
                 gameState.isProcessing = false;
                 gameState.startTime = 0;
+                gameState.totalActiveTime = 0;
+                gameState.questionTimes = [];
+                gameState.questionStartTime = 0;
+                
+                // Clear results history
+                document.getElementById('resultsList').innerHTML = '';
+                document.getElementById('resultsHistory').style.display = 'none';
                 
                 // Show setup screen
                 document.getElementById('finalScreen').style.display = 'none';
@@ -359,5 +486,5 @@
             }
         }
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97f17279b5e78f24',t:'MTc1Nzg2OTI5Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97f198a986198464',t:'MTc1Nzg3MDg2MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
