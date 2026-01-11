@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>線上點名系統 (座位表版)</title>
+    <title>線上點名系統 (可取消版)</title>
     <style>
         :root {
             --primary-color: #4a90e2;
             --success-color: #2ecc71;
+            --danger-color: #e74c3c; /* 紅色用於取消 */
             --bg-color: #f0f2f5;
             --text-color: #333;
         }
@@ -33,7 +34,6 @@
         }
         h1 { text-align: center; margin-bottom: 20px; font-size: 1.5rem; }
         
-        /* Tabs navigation */
         .tabs { display: flex; margin-bottom: 20px; background: #e4e6eb; border-radius: 10px; padding: 4px; }
         .tab-btn {
             flex: 1; padding: 10px; border: none; background: none;
@@ -42,12 +42,10 @@
         }
         .tab-btn.active { background: white; color: var(--primary-color); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         
-        /* Sections */
-        .section { display: none; animation: fadeIn 0.3s; flex: 1; }
+        .section { display: none; flex: 1; }
         .section.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        /* --- 座位表按鈕樣式 (新功能) --- */
+        /* 座位表樣式 */
         .status-bar {
             text-align: center; margin-bottom: 15px; font-size: 0.9rem; color: #666;
             display: flex; justify-content: space-between; align-items: center;
@@ -58,12 +56,12 @@
         }
         .seat-grid {
             display: grid;
-            grid-template-columns: repeat(5, 1fr); /* 一列5個 */
+            grid-template-columns: repeat(5, 1fr);
             gap: 10px;
             margin-bottom: 20px;
         }
         .seat-btn {
-            aspect-ratio: 1; /* 正方形 */
+            aspect-ratio: 1;
             border: 2px solid #e4e6eb;
             background-color: white;
             border-radius: 10px;
@@ -73,9 +71,7 @@
             cursor: pointer;
             transition: all 0.2s;
             position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            display: flex; align-items: center; justify-content: center;
         }
         .seat-btn:hover { border-color: var(--primary-color); }
         .seat-btn:active { transform: scale(0.95); }
@@ -87,14 +83,7 @@
             border-color: var(--success-color);
             box-shadow: 0 4px 6px rgba(46, 204, 113, 0.2);
         }
-        /* 標示 "已簽到" 文字 (可選) */
-        .seat-btn.checked::after {
-            content: '✓';
-            position: absolute;
-            bottom: 2px;
-            right: 4px;
-            font-size: 0.8rem;
-        }
+        .seat-btn.checked::after { content: '✓'; position: absolute; bottom: 2px; right: 4px; font-size: 0.8rem; }
 
         /* Inputs & Action Buttons */
         .form-group { margin-bottom: 15px; }
@@ -110,20 +99,17 @@
         }
         button.action-btn:disabled { background-color: #bdc3c7; }
 
-        /* --- 自訂日曆樣式 --- */
+        /* Calendar Styles (Condensed) */
         .calendar-wrapper { border: 1px solid #eef2f5; border-radius: 10px; padding: 10px; background: white; }
         .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
         .calendar-header button { background: none; border: none; font-size: 1.2rem; cursor: pointer; padding: 5px 15px; }
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
-        .cal-day-name { font-weight: bold; font-size: 0.8rem; color: #95a5a6; padding-bottom: 5px; }
-        .cal-date { 
-            padding: 8px 0; cursor: pointer; border-radius: 50%; font-size: 0.9rem; transition: 0.2s; 
-        }
+        .cal-date { padding: 8px 0; cursor: pointer; border-radius: 50%; font-size: 0.9rem; }
         .cal-date:hover { background-color: #f0f4f8; }
         .cal-date.selected { background-color: var(--primary-color); color: white; }
         .cal-date.empty { cursor: default; }
 
-        /* --- 確認視窗 Modal --- */
+        /* --- Modal 樣式優化 --- */
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000;
@@ -133,14 +119,19 @@
             box-shadow: 0 5px 15px rgba(0,0,0,0.2); animation: popIn 0.3s;
         }
         @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        .modal-title { font-size: 1.2rem; margin-bottom: 10px; color: #333; }
+        
+        .modal-title { font-size: 1.2rem; margin-bottom: 10px; color: #333; font-weight: bold; }
         .modal-seat { font-size: 3.5rem; font-weight: bold; color: var(--primary-color); margin: 10px 0 20px 0; }
+        
+        /* Modal for Delete State */
+        .modal-box.delete-mode .modal-seat { color: var(--danger-color); }
+        .modal-box.delete-mode .btn-confirm { background-color: var(--danger-color); }
+        
         .modal-actions { display: flex; gap: 10px; }
-        .modal-btn { flex: 1; padding: 12px; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer; }
-        .btn-confirm { background: var(--primary-color); color: white; }
+        .modal-btn { flex: 1; padding: 12px; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer; color: white; }
+        .btn-confirm { background: var(--primary-color); }
         .btn-cancel { background: #e0e0e0; color: #333; }
 
-        /* 結果表格 */
         .result-area { margin-top: 20px; overflow-y: auto; flex: 1; }
         table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
         th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
@@ -161,12 +152,10 @@
 
     <div id="checkin" class="section active">
         <div class="status-bar">
-            <span>📅 今日出席狀況</span>
-            <button class="refresh-btn" onclick="refreshTodayStatus()">🔄 更新狀態</button>
+            <span>📅 今日點名狀況</span>
+            <button class="refresh-btn" onclick="refreshTodayStatus()">🔄 更新</button>
         </div>
-        
-        <div class="seat-grid" id="seatGrid">
-            </div>
+        <div class="seat-grid" id="seatGrid"></div>
     </div>
 
     <div id="querySeat" class="section">
@@ -183,36 +172,36 @@
             <input type="hidden" id="selectedDateRaw"> 
             <div id="inlineCalendar" class="calendar-wrapper"></div>
             <p style="text-align: center; margin-top:10px; color:var(--primary-color); font-weight:bold;">
-                已選日期: <span id="displaySelectedDate">尚未選擇</span>
+                已選: <span id="displaySelectedDate">尚未選擇</span>
             </p>
         </div>
-        <button class="action-btn" onclick="queryData('query_date')">查詢當日全班</button>
+        <button class="action-btn" onclick="queryData('query_date')">查詢當日</button>
     </div>
 
     <div id="queryRange" class="section">
         <div class="form-group">
-            <label>開始日期：</label>
+            <label>開始：</label>
             <input type="date" id="startDate">
         </div>
         <div class="form-group">
-            <label>結束日期：</label>
+            <label>結束：</label>
             <input type="date" id="endDate">
         </div>
         <button class="action-btn" onclick="queryData('query_range')">查詢區間</button>
     </div>
 
-    <div id="loading" class="loading">資料讀取中...</div>
+    <div id="loading" class="loading">處理中...</div>
     <div class="result-area" id="resultArea"></div>
 </div>
 
 <div class="modal-overlay" id="confirmModal">
-    <div class="modal-box">
-        <div class="modal-title">確認點名</div>
-        <div style="color:#666; font-size:0.9rem;">即將送出座號</div>
+    <div class="modal-box" id="modalBox">
+        <div class="modal-title" id="modalTitle">確認點名</div>
+        <div style="color:#666; font-size:0.9rem;" id="modalDesc">即將送出座號</div>
         <div class="modal-seat" id="modalSeatNum">--</div>
         <div class="modal-actions">
             <button class="modal-btn btn-cancel" onclick="closeConfirmModal()">取消</button>
-            <button class="modal-btn btn-confirm" onclick="submitCheckIn()">確認</button>
+            <button class="modal-btn btn-confirm" id="modalConfirmBtn" onclick="processAction()">確認</button>
         </div>
     </div>
 </div>
@@ -223,70 +212,69 @@
     // ***************************
 
     let currentSelectedSeat = null;
+    let isCancelAction = false; // 判斷現在是"點名"還是"取消"
     let calendarDate = new Date(); 
     let selectedDateStr = ""; 
 
-    // 初始化
     document.addEventListener('DOMContentLoaded', () => {
-        renderSeatGrid();      // 繪製 1-30 號按鈕
-        renderCalendar(calendarDate); // 繪製日曆
-        refreshTodayStatus();  // 進入頁面時自動載入今日狀態
+        renderSeatGrid();
+        renderCalendar(calendarDate);
+        refreshTodayStatus();
     });
 
-    // --- 1. 座位表邏輯 ---
-    
     function renderSeatGrid() {
         const grid = document.getElementById('seatGrid');
         let html = '';
         for(let i=1; i<=30; i++) {
-            // 每個按鈕都有 id="seat-btn-X"，方便後續變色
-            html += `<button id="seat-btn-${i}" class="seat-btn" onclick="openConfirmModal(${i})">${i}</button>`;
+            html += `<button id="seat-btn-${i}" class="seat-btn" onclick="openModal(${i})">${i}</button>`;
         }
         grid.innerHTML = html;
     }
 
-    // 取得今日狀態，並更新按鈕顏色
     async function refreshTodayStatus() {
-        // 取得今日日期字串 YYYY-MM-DD
         const today = new Date().toISOString().split('T')[0];
-        
-        // 顯示載入中 (不蓋版，只改變透明度示意)
         document.getElementById('seatGrid').style.opacity = '0.5';
-
         try {
-            // 呼叫後端查詢 "今天" 的資料
             const response = await fetch(`${SCRIPT_URL}?action=query_date&date=${today}`);
             const json = await response.json();
             
             if (json.status === 'success') {
-                // 先重置所有按鈕樣式
                 document.querySelectorAll('.seat-btn').forEach(btn => btn.classList.remove('checked'));
-
-                // 根據回傳資料，將已出席的座號加上 .checked
                 json.data.forEach(record => {
-                    const seatNum = record.seat;
-                    const btn = document.getElementById(`seat-btn-${seatNum}`);
+                    const btn = document.getElementById(`seat-btn-${record.seat}`);
                     if (btn) btn.classList.add('checked');
                 });
             }
-        } catch (e) {
-            console.error("無法同步狀態", e);
-        }
-        
+        } catch (e) { console.error(e); }
         document.getElementById('seatGrid').style.opacity = '1';
     }
 
-    // 開啟確認視窗
-    function openConfirmModal(seatNum) {
-        // 檢查是否已經點過名 (看是否有 checked class)
+    // --- Modal 控制邏輯 ---
+    function openModal(seatNum) {
+        currentSelectedSeat = seatNum;
         const btn = document.getElementById(`seat-btn-${seatNum}`);
+        const modalBox = document.getElementById('modalBox');
+        const confirmBtn = document.getElementById('modalConfirmBtn');
+        const title = document.getElementById('modalTitle');
+        const desc = document.getElementById('modalDesc');
+
+        // 判斷按鈕狀態
         if(btn.classList.contains('checked')) {
-            if(!confirm(`座號 ${seatNum} 已經點名過了，要再次點名嗎？`)) {
-                return;
-            }
+            // 已點名 -> 進入取消模式
+            isCancelAction = true;
+            modalBox.classList.add('delete-mode'); // 變紅色風格
+            title.innerText = "⚠️ 取消點名";
+            desc.innerText = "確定要刪除此紀錄嗎？";
+            confirmBtn.innerText = "刪除";
+        } else {
+            // 未點名 -> 進入點名模式
+            isCancelAction = false;
+            modalBox.classList.remove('delete-mode'); // 正常藍色
+            title.innerText = "確認點名";
+            desc.innerText = "即將送出座號";
+            confirmBtn.innerText = "確認";
         }
 
-        currentSelectedSeat = seatNum;
         document.getElementById('modalSeatNum').innerText = seatNum;
         document.getElementById('confirmModal').style.display = 'flex';
     }
@@ -296,26 +284,29 @@
         currentSelectedSeat = null;
     }
 
-    // 送出點名
-    async function submitCheckIn() {
+    // --- 執行動作 (根據 isCancelAction 決定) ---
+    async function processAction() {
         if (!currentSelectedSeat) return;
-        const seat = currentSelectedSeat;
-        closeConfirmModal(); // 先關閉視窗
-
+        closeConfirmModal();
         setLoading(true);
+
+        const actionType = isCancelAction ? 'cancel_checkin' : 'checkin';
+        
         try {
-            const response = await fetch(`${SCRIPT_URL}?action=checkin&seatNumber=${seat}`);
+            const response = await fetch(`${SCRIPT_URL}?action=${actionType}&seatNumber=${currentSelectedSeat}`);
             const data = await response.json();
             
             if(data.status === 'success') {
-                // 成功後，直接在前端將該按鈕變色 (綠色)
-                const btn = document.getElementById(`seat-btn-${seat}`);
-                if(btn) btn.classList.add('checked');
-                
-                // 選擇性：顯示簡單提示，或保持安靜
-                // alert(`座號 ${seat} 點名成功！`);
+                const btn = document.getElementById(`seat-btn-${currentSelectedSeat}`);
+                if (isCancelAction) {
+                    // 取消成功 -> 移除綠色
+                    if(btn) btn.classList.remove('checked');
+                } else {
+                    // 點名成功 -> 加上綠色
+                    if(btn) btn.classList.add('checked');
+                }
             } else {
-                alert("點名失敗：" + data.message);
+                alert("操作失敗：" + data.message);
             }
         } catch (e) {
             alert("連線錯誤");
@@ -323,9 +314,9 @@
         setLoading(false);
     }
 
-    // --- 2. 頁面切換邏輯 ---
+    // --- 以下為查詢與介面輔助 function (保持原樣) ---
+    
     function switchTab(tabId) {
-        // UI 切換
         document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
         document.getElementById(tabId).classList.add('active');
@@ -334,16 +325,14 @@
         const btnIndex = tabs.indexOf(tabId);
         if(btnIndex >= 0) document.querySelectorAll('.tab-btn')[btnIndex].classList.add('active');
 
-        // 如果切換回點名頁面，自動更新狀態
         if (tabId === 'checkin') {
             refreshTodayStatus();
-            document.getElementById('resultArea').innerHTML = ''; // 清空查詢結果
+            document.getElementById('resultArea').innerHTML = '';
         } else {
-            document.getElementById('resultArea').innerHTML = ''; // 清空查詢結果
+            document.getElementById('resultArea').innerHTML = '';
         }
     }
 
-    // --- 3. 查詢與日曆邏輯 (維持不變，僅微調) ---
     function renderCalendar(date) {
         const year = date.getFullYear();
         const month = date.getMonth();
@@ -431,8 +420,7 @@
 
     function setLoading(isLoading) {
         document.getElementById('loading').style.display = isLoading ? 'block' : 'none';
-        // 不要在點名時鎖定 grid，體驗較好，僅在查詢時鎖定
-        const btns = document.querySelectorAll('button.action-btn'); 
+        const btns = document.querySelectorAll('button.action-btn, button.modal-btn'); 
         btns.forEach(btn => btn.disabled = isLoading);
     }
 </script>
