@@ -286,18 +286,26 @@
 
     // --- 執行動作 (根據 isCancelAction 決定) ---
     async function processAction() {
+        // 1. 先檢查是否有選中座號
         if (!currentSelectedSeat) return;
-        closeConfirmModal();
+        
+        // 2. 【關鍵修正】先把座號存入區域變數，避免被 closeConfirmModal 清掉
+        const seat = currentSelectedSeat; 
+        
+        // 3. 關閉視窗 (這會把全域變數 currentSelectedSeat 設為 null)
+        closeConfirmModal(); 
+
         setLoading(true);
 
         const actionType = isCancelAction ? 'cancel_checkin' : 'checkin';
         
         try {
-            const response = await fetch(`${SCRIPT_URL}?action=${actionType}&seatNumber=${currentSelectedSeat}`);
+            // 4. 使用區域變數 seat 來發送請求
+            const response = await fetch(`${SCRIPT_URL}?action=${actionType}&seatNumber=${seat}`);
             const data = await response.json();
             
             if(data.status === 'success') {
-                const btn = document.getElementById(`seat-btn-${currentSelectedSeat}`);
+                const btn = document.getElementById(`seat-btn-${seat}`);
                 if (isCancelAction) {
                     // 取消成功 -> 移除綠色
                     if(btn) btn.classList.remove('checked');
@@ -309,6 +317,7 @@
                 alert("操作失敗：" + data.message);
             }
         } catch (e) {
+            console.error(e); // 方便除錯
             alert("連線錯誤");
         }
         setLoading(false);
