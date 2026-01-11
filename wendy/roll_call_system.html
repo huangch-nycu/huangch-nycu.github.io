@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>線上點名系統 Pro</title>
+    <title>線上點名系統 (座位表版)</title>
     <style>
         :root {
             --primary-color: #4a90e2;
-            --secondary-color: #f5f6fa;
-            --text-color: #2c3e50;
-            --accent-color: #e74c3c;
+            --success-color: #2ecc71;
+            --bg-color: #f0f2f5;
+            --text-color: #333;
         }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background-color: #eef2f5;
+            background-color: var(--bg-color);
             margin: 0;
             padding: 10px;
             display: flex;
@@ -22,64 +22,93 @@
         }
         .container {
             width: 100%;
-            max-width: 500px;
+            max-width: 600px;
             background: white;
             padding: 20px;
             border-radius: 15px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
             min-height: 90vh;
+            display: flex;
+            flex-direction: column;
         }
         h1 { text-align: center; margin-bottom: 20px; font-size: 1.5rem; }
         
         /* Tabs navigation */
-        .tabs { display: flex; margin-bottom: 20px; background: #f1f3f4; border-radius: 10px; padding: 5px; }
+        .tabs { display: flex; margin-bottom: 20px; background: #e4e6eb; border-radius: 10px; padding: 4px; }
         .tab-btn {
             flex: 1; padding: 10px; border: none; background: none;
-            cursor: pointer; font-size: 14px; font-weight: 600; color: #7f8c8d;
+            cursor: pointer; font-size: 14px; font-weight: 600; color: #65676b;
             border-radius: 8px; transition: 0.2s;
         }
-        .tab-btn.active { background: white; color: var(--primary-color); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .tab-btn.active { background: white; color: var(--primary-color); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         
         /* Sections */
-        .section { display: none; animation: fadeIn 0.3s; }
+        .section { display: none; animation: fadeIn 0.3s; flex: 1; }
         .section.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        /* Inputs & Buttons */
+        /* --- 座位表按鈕樣式 (新功能) --- */
+        .status-bar {
+            text-align: center; margin-bottom: 15px; font-size: 0.9rem; color: #666;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .refresh-btn {
+            background: none; border: 1px solid #ddd; padding: 5px 10px; 
+            border-radius: 5px; cursor: pointer; font-size: 0.8rem;
+        }
+        .seat-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr); /* 一列5個 */
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .seat-btn {
+            aspect-ratio: 1; /* 正方形 */
+            border: 2px solid #e4e6eb;
+            background-color: white;
+            border-radius: 10px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #333;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .seat-btn:hover { border-color: var(--primary-color); }
+        .seat-btn:active { transform: scale(0.95); }
+        
+        /* 已簽到狀態 */
+        .seat-btn.checked {
+            background-color: var(--success-color);
+            color: white;
+            border-color: var(--success-color);
+            box-shadow: 0 4px 6px rgba(46, 204, 113, 0.2);
+        }
+        /* 標示 "已簽到" 文字 (可選) */
+        .seat-btn.checked::after {
+            content: '✓';
+            position: absolute;
+            bottom: 2px;
+            right: 4px;
+            font-size: 0.8rem;
+        }
+
+        /* Inputs & Action Buttons */
         .form-group { margin-bottom: 15px; }
         label { display: block; margin-bottom: 8px; font-weight: bold; font-size: 0.9rem; }
-        input[type="number"], input[type="date"], input[type="text"] {
+        input {
             width: 100%; padding: 12px; border: 2px solid #eef2f5;
             border-radius: 10px; font-size: 16px; box-sizing: border-box; text-align: center;
         }
-        input:focus { border-color: var(--primary-color); outline: none; }
-        
         button.action-btn {
             width: 100%; padding: 14px; background-color: var(--primary-color);
             color: white; border: none; border-radius: 10px; cursor: pointer;
             font-size: 16px; font-weight: bold; margin-top: 10px;
-            transition: transform 0.1s;
         }
-        button.action-btn:active { transform: scale(0.98); }
         button.action-btn:disabled { background-color: #bdc3c7; }
-
-        /* --- 數字鍵盤樣式 --- */
-        .keypad-display {
-            font-size: 2rem; text-align: center; margin-bottom: 15px;
-            padding: 15px; background: #f8f9fa; border-radius: 10px;
-            font-weight: bold; letter-spacing: 2px; min-height: 30px;
-        }
-        .keypad {
-            display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px;
-        }
-        .key-btn {
-            padding: 15px; font-size: 1.5rem; background: #fff;
-            border: 1px solid #e1e8ed; border-radius: 10px; cursor: pointer;
-            box-shadow: 0 2px 0 #e1e8ed; color: #333;
-        }
-        .key-btn:active { transform: translateY(2px); box-shadow: none; }
-        .key-btn.del { background-color: #ffebee; color: var(--accent-color); font-size: 1.2rem; display: flex; align-items: center; justify-content: center;}
-        .key-btn.clear { background-color: #f1f3f4; font-size: 1rem; display: flex; align-items: center; justify-content: center; }
 
         /* --- 自訂日曆樣式 --- */
         .calendar-wrapper { border: 1px solid #eef2f5; border-radius: 10px; padding: 10px; background: white; }
@@ -94,14 +123,7 @@
         .cal-date.selected { background-color: var(--primary-color); color: white; }
         .cal-date.empty { cursor: default; }
 
-        /* --- 結果表格 --- */
-        .result-area { margin-top: 20px; max-height: 300px; overflow-y: auto; }
-        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
-        th { background-color: #f8f9fa; color: #7f8c8d; font-weight: 600; }
-        .loading { text-align: center; padding: 20px; color: var(--primary-color); display: none; }
-
-        /* --- 確認 Modal 視窗 --- */
+        /* --- 確認視窗 Modal --- */
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000;
@@ -112,11 +134,17 @@
         }
         @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         .modal-title { font-size: 1.2rem; margin-bottom: 10px; color: #333; }
-        .modal-seat { font-size: 3rem; font-weight: bold; color: var(--primary-color); margin: 10px 0 20px 0; }
+        .modal-seat { font-size: 3.5rem; font-weight: bold; color: var(--primary-color); margin: 10px 0 20px 0; }
         .modal-actions { display: flex; gap: 10px; }
         .modal-btn { flex: 1; padding: 12px; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer; }
         .btn-confirm { background: var(--primary-color); color: white; }
         .btn-cancel { background: #e0e0e0; color: #333; }
+
+        /* 結果表格 */
+        .result-area { margin-top: 20px; overflow-y: auto; flex: 1; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
+        .loading { text-align: center; padding: 20px; color: var(--primary-color); display: none; }
     </style>
 </head>
 <body>
@@ -132,24 +160,13 @@
     </div>
 
     <div id="checkin" class="section active">
-        <div class="keypad-display" id="keypadDisplay">請輸入座號</div>
-        <input type="hidden" id="checkinSeat">
-        
-        <div class="keypad">
-            <button class="key-btn" onclick="appendKey('1')">1</button>
-            <button class="key-btn" onclick="appendKey('2')">2</button>
-            <button class="key-btn" onclick="appendKey('3')">3</button>
-            <button class="key-btn" onclick="appendKey('4')">4</button>
-            <button class="key-btn" onclick="appendKey('5')">5</button>
-            <button class="key-btn" onclick="appendKey('6')">6</button>
-            <button class="key-btn" onclick="appendKey('7')">7</button>
-            <button class="key-btn" onclick="appendKey('8')">8</button>
-            <button class="key-btn" onclick="appendKey('9')">9</button>
-            <button class="key-btn clear" onclick="clearKey()">清空</button>
-            <button class="key-btn" onclick="appendKey('0')">0</button>
-            <button class="key-btn del" onclick="backspaceKey()">⌫</button>
+        <div class="status-bar">
+            <span>📅 今日出席狀況</span>
+            <button class="refresh-btn" onclick="refreshTodayStatus()">🔄 更新狀態</button>
         </div>
-        <button class="action-btn" onclick="openConfirmModal()">送出點名</button>
+        
+        <div class="seat-grid" id="seatGrid">
+            </div>
     </div>
 
     <div id="querySeat" class="section">
@@ -163,8 +180,8 @@
     <div id="queryDate" class="section">
         <div class="form-group">
             <label>選擇日期：</label>
-            <input type="hidden" id="selectedDateRaw"> <div id="inlineCalendar" class="calendar-wrapper">
-                </div>
+            <input type="hidden" id="selectedDateRaw"> 
+            <div id="inlineCalendar" class="calendar-wrapper"></div>
             <p style="text-align: center; margin-top:10px; color:var(--primary-color); font-weight:bold;">
                 已選日期: <span id="displaySelectedDate">尚未選擇</span>
             </p>
@@ -184,14 +201,14 @@
         <button class="action-btn" onclick="queryData('query_range')">查詢區間</button>
     </div>
 
-    <div id="loading" class="loading">資料讀取中，請稍候...</div>
+    <div id="loading" class="loading">資料讀取中...</div>
     <div class="result-area" id="resultArea"></div>
 </div>
 
 <div class="modal-overlay" id="confirmModal">
     <div class="modal-box">
         <div class="modal-title">確認點名</div>
-        <div style="color:#666; font-size:0.9rem;">座號</div>
+        <div style="color:#666; font-size:0.9rem;">即將送出座號</div>
         <div class="modal-seat" id="modalSeatNum">--</div>
         <div class="modal-actions">
             <button class="modal-btn btn-cancel" onclick="closeConfirmModal()">取消</button>
@@ -205,77 +222,133 @@
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzQmv2hUnPEwiZI7Gygmu2d3Rpv8fPhTAoGFUJDqqeggJBMhBcVUw307fhcx_v9SEqtHA/exec"; 
     // ***************************
 
-    // --- 全域變數 ---
-    let currentSeatInput = "";
-    let calendarDate = new Date(); // 當前日曆顯示的月份
-    let selectedDateStr = ""; // 已選中的日期 YYYY-MM-DD
+    let currentSelectedSeat = null;
+    let calendarDate = new Date(); 
+    let selectedDateStr = ""; 
 
-    // --- 初始化 ---
+    // 初始化
     document.addEventListener('DOMContentLoaded', () => {
-        renderCalendar(calendarDate);
+        renderSeatGrid();      // 繪製 1-30 號按鈕
+        renderCalendar(calendarDate); // 繪製日曆
+        refreshTodayStatus();  // 進入頁面時自動載入今日狀態
     });
 
-    // --- Tab 切換 ---
+    // --- 1. 座位表邏輯 ---
+    
+    function renderSeatGrid() {
+        const grid = document.getElementById('seatGrid');
+        let html = '';
+        for(let i=1; i<=30; i++) {
+            // 每個按鈕都有 id="seat-btn-X"，方便後續變色
+            html += `<button id="seat-btn-${i}" class="seat-btn" onclick="openConfirmModal(${i})">${i}</button>`;
+        }
+        grid.innerHTML = html;
+    }
+
+    // 取得今日狀態，並更新按鈕顏色
+    async function refreshTodayStatus() {
+        // 取得今日日期字串 YYYY-MM-DD
+        const today = new Date().toISOString().split('T')[0];
+        
+        // 顯示載入中 (不蓋版，只改變透明度示意)
+        document.getElementById('seatGrid').style.opacity = '0.5';
+
+        try {
+            // 呼叫後端查詢 "今天" 的資料
+            const response = await fetch(`${SCRIPT_URL}?action=query_date&date=${today}`);
+            const json = await response.json();
+            
+            if (json.status === 'success') {
+                // 先重置所有按鈕樣式
+                document.querySelectorAll('.seat-btn').forEach(btn => btn.classList.remove('checked'));
+
+                // 根據回傳資料，將已出席的座號加上 .checked
+                json.data.forEach(record => {
+                    const seatNum = record.seat;
+                    const btn = document.getElementById(`seat-btn-${seatNum}`);
+                    if (btn) btn.classList.add('checked');
+                });
+            }
+        } catch (e) {
+            console.error("無法同步狀態", e);
+        }
+        
+        document.getElementById('seatGrid').style.opacity = '1';
+    }
+
+    // 開啟確認視窗
+    function openConfirmModal(seatNum) {
+        // 檢查是否已經點過名 (看是否有 checked class)
+        const btn = document.getElementById(`seat-btn-${seatNum}`);
+        if(btn.classList.contains('checked')) {
+            if(!confirm(`座號 ${seatNum} 已經點名過了，要再次點名嗎？`)) {
+                return;
+            }
+        }
+
+        currentSelectedSeat = seatNum;
+        document.getElementById('modalSeatNum').innerText = seatNum;
+        document.getElementById('confirmModal').style.display = 'flex';
+    }
+
+    function closeConfirmModal() {
+        document.getElementById('confirmModal').style.display = 'none';
+        currentSelectedSeat = null;
+    }
+
+    // 送出點名
+    async function submitCheckIn() {
+        if (!currentSelectedSeat) return;
+        const seat = currentSelectedSeat;
+        closeConfirmModal(); // 先關閉視窗
+
+        setLoading(true);
+        try {
+            const response = await fetch(`${SCRIPT_URL}?action=checkin&seatNumber=${seat}`);
+            const data = await response.json();
+            
+            if(data.status === 'success') {
+                // 成功後，直接在前端將該按鈕變色 (綠色)
+                const btn = document.getElementById(`seat-btn-${seat}`);
+                if(btn) btn.classList.add('checked');
+                
+                // 選擇性：顯示簡單提示，或保持安靜
+                // alert(`座號 ${seat} 點名成功！`);
+            } else {
+                alert("點名失敗：" + data.message);
+            }
+        } catch (e) {
+            alert("連線錯誤");
+        }
+        setLoading(false);
+    }
+
+    // --- 2. 頁面切換邏輯 ---
     function switchTab(tabId) {
+        // UI 切換
         document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
         document.getElementById(tabId).classList.add('active');
-        // 找到觸發這個 function 的按鈕
-        const buttons = document.querySelectorAll('.tab-btn');
-        if(tabId === 'checkin') buttons[0].classList.add('active');
-        if(tabId === 'querySeat') buttons[1].classList.add('active');
-        if(tabId === 'queryDate') buttons[2].classList.add('active');
-        if(tabId === 'queryRange') buttons[3].classList.add('active');
         
-        document.getElementById('resultArea').innerHTML = '';
-    }
+        const tabs = ['checkin', 'querySeat', 'queryDate', 'queryRange'];
+        const btnIndex = tabs.indexOf(tabId);
+        if(btnIndex >= 0) document.querySelectorAll('.tab-btn')[btnIndex].classList.add('active');
 
-    // --- 數字鍵盤邏輯 ---
-    function updateDisplay() {
-        const display = document.getElementById('keypadDisplay');
-        display.innerText = currentSeatInput === "" ? "請輸入座號" : currentSeatInput;
-        display.style.color = currentSeatInput === "" ? "#bdc3c7" : "#333";
-        document.getElementById('checkinSeat').value = currentSeatInput;
-    }
-    function appendKey(num) {
-        if (currentSeatInput.length < 3) { // 限制長度
-            currentSeatInput += num;
-            updateDisplay();
+        // 如果切換回點名頁面，自動更新狀態
+        if (tabId === 'checkin') {
+            refreshTodayStatus();
+            document.getElementById('resultArea').innerHTML = ''; // 清空查詢結果
+        } else {
+            document.getElementById('resultArea').innerHTML = ''; // 清空查詢結果
         }
     }
-    function clearKey() {
-        currentSeatInput = "";
-        updateDisplay();
-    }
-    function backspaceKey() {
-        currentSeatInput = currentSeatInput.slice(0, -1);
-        updateDisplay();
-    }
 
-    // --- 確認視窗邏輯 ---
-    function openConfirmModal() {
-        if (!currentSeatInput) {
-            alert("請先輸入座號！");
-            return;
-        }
-        document.getElementById('modalSeatNum').innerText = currentSeatInput;
-        document.getElementById('confirmModal').style.display = 'flex';
-    }
-    function closeConfirmModal() {
-        document.getElementById('confirmModal').style.display = 'none';
-    }
-    function submitCheckIn() {
-        closeConfirmModal();
-        handleCheckIn();
-    }
-
-    // --- 自訂日曆邏輯 ---
+    // --- 3. 查詢與日曆邏輯 (維持不變，僅微調) ---
     function renderCalendar(date) {
         const year = date.getFullYear();
         const month = date.getMonth();
-        const firstDay = new Date(year, month, 1).getDay(); // 0 is Sunday
+        const firstDay = new Date(year, month, 1).getDay();
         const daysInMonth = new Date(year, month + 1, 0).getDate();
-
         const monthNames = ["一月", "二月", "三月", "四月", "五月", "六月", "七月", "八月", "九月", "十月", "十一月", "十二月"];
         
         let html = `
@@ -285,29 +358,15 @@
                 <button onclick="changeMonth(1)">&#10095;</button>
             </div>
             <div class="calendar-grid">
-                <div class="cal-day-name">日</div>
-                <div class="cal-day-name">一</div>
-                <div class="cal-day-name">二</div>
-                <div class="cal-day-name">三</div>
-                <div class="cal-day-name">四</div>
-                <div class="cal-day-name">五</div>
-                <div class="cal-day-name">六</div>
+                <div class="cal-day-name">日</div><div class="cal-day-name">一</div><div class="cal-day-name">二</div>
+                <div class="cal-day-name">三</div><div class="cal-day-name">四</div><div class="cal-day-name">五</div><div class="cal-day-name">六</div>
         `;
-
-        // 空白格子 (上個月)
-        for (let i = 0; i < firstDay; i++) {
-            html += `<div class="cal-date empty"></div>`;
-        }
-
-        // 日期格子
+        for (let i = 0; i < firstDay; i++) html += `<div class="cal-date empty"></div>`;
         for (let d = 1; d <= daysInMonth; d++) {
-            // 格式化 YYYY-MM-DD
             const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
             const isSelected = dateStr === selectedDateStr ? 'selected' : '';
-            
             html += `<div class="cal-date ${isSelected}" onclick="selectDate('${dateStr}')">${d}</div>`;
         }
-
         html += `</div>`;
         document.getElementById('inlineCalendar').innerHTML = html;
     }
@@ -321,44 +380,20 @@
         selectedDateStr = dateStr;
         document.getElementById('selectedDateRaw').value = dateStr;
         document.getElementById('displaySelectedDate').innerText = dateStr;
-        renderCalendar(calendarDate); // 重新渲染以顯示選中狀態
-    }
-
-
-    // --- API 串接 ---
-    async function handleCheckIn() {
-        const seat = document.getElementById('checkinSeat').value;
-        setLoading(true);
-        try {
-            const response = await fetch(`${SCRIPT_URL}?action=checkin&seatNumber=${seat}`);
-            const data = await response.json();
-            
-            if(data.status === 'success') {
-                alert(`✅ 點名成功！\n座號: ${data.seat}\n時間: ${new Date(data.time).toLocaleTimeString()}`);
-                clearKey(); // 清空輸入
-            } else {
-                alert("❌ 點名失敗：" + data.message);
-            }
-        } catch (e) {
-            alert("連線錯誤，請檢查網路");
-        }
-        setLoading(false);
+        renderCalendar(calendarDate);
     }
 
     async function queryData(type) {
         let params = `action=${type}`;
-        
         if (type === 'query_seat') {
             const seat = document.getElementById('searchSeatNum').value;
             if (!seat) return alert("請輸入座號");
             params += `&seatNumber=${seat}`;
-        } 
-        else if (type === 'query_date') {
+        } else if (type === 'query_date') {
             const date = document.getElementById('selectedDateRaw').value;
             if (!date) return alert("請點選日曆選擇日期");
             params += `&date=${date}`;
-        } 
-        else if (type === 'query_range') {
+        } else if (type === 'query_range') {
             const start = document.getElementById('startDate').value;
             const end = document.getElementById('endDate').value;
             if (!start || !end) return alert("請選擇完整日期區間");
@@ -366,13 +401,12 @@
         }
 
         setLoading(true);
-        document.getElementById('resultArea').innerHTML = ''; // 清空舊資料
+        document.getElementById('resultArea').innerHTML = '';
         try {
             const response = await fetch(`${SCRIPT_URL}?${params}`);
             const json = await response.json();
             renderTable(json.data);
         } catch (e) {
-            console.error(e);
             alert("查詢錯誤");
         }
         setLoading(false);
@@ -384,18 +418,12 @@
             div.innerHTML = '<p style="text-align:center; padding:20px; color:#999;">📭 查無資料</p>';
             return;
         }
-
-        // 按時間倒序排列
         data.sort((a, b) => new Date(b.time) - new Date(a.time));
-
         let html = `<table><thead><tr><th>時間</th><th>座號</th></tr></thead><tbody>`;
         data.forEach(row => {
-            const dateObj = new Date(row.time);
-            // 格式化顯示
-            const timeStr = `${dateObj.getHours().toString().padStart(2,'0')}:${dateObj.getMinutes().toString().padStart(2,'0')}`;
-            const dateStr = `${dateObj.getMonth()+1}/${dateObj.getDate()}`;
-            
-            html += `<tr><td>${dateStr} ${timeStr}</td><td><strong>${row.seat}</strong></td></tr>`;
+            const d = new Date(row.time);
+            const timeStr = `${d.getMonth()+1}/${d.getDate()} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
+            html += `<tr><td>${timeStr}</td><td><strong>${row.seat}</strong></td></tr>`;
         });
         html += '</tbody></table>';
         div.innerHTML = html;
@@ -403,7 +431,8 @@
 
     function setLoading(isLoading) {
         document.getElementById('loading').style.display = isLoading ? 'block' : 'none';
-        const btns = document.querySelectorAll('button:not(.key-btn)'); // 不鎖定鍵盤按鈕以免卡住
+        // 不要在點名時鎖定 grid，體驗較好，僅在查詢時鎖定
+        const btns = document.querySelectorAll('button.action-btn'); 
         btns.forEach(btn => btn.disabled = isLoading);
     }
 </script>
