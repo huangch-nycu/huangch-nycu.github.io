@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>線上點名系統</title>
+    <style>
+        :root {
+            --primary-color: #4a90e2;
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        h1 { text-align: center; color: #333; }
+        
+        /* Tabs navigation */
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #ddd;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 16px;
+            color: #666;
+            transition: 0.3s;
+        }
+        .tab-btn.active {
+            color: var(--primary-color);
+            border-bottom: 3px solid var(--primary-color);
+            font-weight: bold;
+        }
+        
+        /* Content Sections */
+        .section { display: none; }
+        .section.active { display: block; }
+
+        /* Forms */
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box; /* Fix padding issue */
+        }
+        button.action-btn {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button.action-btn:hover { background-color: #357abd; }
+        button.action-btn:disabled { background-color: #ccc; }
+
+        /* Results Table */
+        .result-area {
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        th { background-color: #f8f9fa; }
+        .loading { text-align: center; color: #999; display: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>📝 線上點名系統</h1>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('checkin')">點名報到</button>
+        <button class="tab-btn" onclick="switchTab('querySeat')">查個人</button>
+        <button class="tab-btn" onclick="switchTab('queryDate')">查單日</button>
+        <button class="tab-btn" onclick="switchTab('queryRange')">查區間</button>
+    </div>
+
+    <div id="checkin" class="section active">
+        <div class="form-group">
+            <label>請輸入座號：</label>
+            <input type="number" id="checkinSeat" placeholder="例如: 15">
+        </div>
+        <button class="action-btn" onclick="handleCheckIn()">送出點名</button>
+    </div>
+
+    <div id="querySeat" class="section">
+        <div class="form-group">
+            <label>查詢座號：</label>
+            <input type="number" id="searchSeatNum" placeholder="例如: 15">
+        </div>
+        <button class="action-btn" onclick="queryData('query_seat')">查詢紀錄</button>
+    </div>
+
+    <div id="queryDate" class="section">
+        <div class="form-group">
+            <label>選擇日期：</label>
+            <input type="date" id="searchDate">
+        </div>
+        <button class="action-btn" onclick="queryData('query_date')">查詢全班</button>
+    </div>
+
+    <div id="queryRange" class="section">
+        <div class="form-group">
+            <label>開始日期：</label>
+            <input type="date" id="startDate">
+        </div>
+        <div class="form-group">
+            <label>結束日期：</label>
+            <input type="date" id="endDate">
+        </div>
+        <button class="action-btn" onclick="queryData('query_range')">查詢區間</button>
+    </div>
+
+    <div id="loading" class="loading">資料處理中...</div>
+    <div class="result-area" id="resultArea">
+        </div>
+</div>
+
+<script>
+    // ********** 設定區 **********
+    // 請將下方的 URL 替換成你的 Google Apps Script Web App URL
+    const SCRIPT_URL = "YOUR_GAS_WEB_APP_URL"; 
+    // ***************************
+
+    function switchTab(tabId) {
+        document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+        
+        document.getElementById(tabId).classList.add('active');
+        event.target.classList.add('active');
+        
+        // 清空結果
+        document.getElementById('resultArea').innerHTML = '';
+    }
+
+    async function handleCheckIn() {
+        const seat = document.getElementById('checkinSeat').value;
+        if (!seat) return alert("請輸入座號！");
+
+        setLoading(true);
+        try {
+            // 使用 GET 請求發送資料 (避免簡單請求的 CORS 複雜性)
+            const response = await fetch(`${SCRIPT_URL}?action=checkin&seatNumber=${seat}`);
+            const data = await response.json();
+            
+            if(data.status === 'success') {
+                alert(`座號 ${data.seat} 點名成功！\n時間: ${new Date(data.time).toLocaleString()}`);
+                document.getElementById('checkinSeat').value = '';
+            } else {
+                alert("點名失敗：" + data.message);
+            }
+        } catch (e) {
+            console.error(e);
+            alert("連線錯誤，請檢查網路或 Script 網址");
+        }
+        setLoading(false);
+    }
+
+    async function queryData(type) {
+        let params = `action=${type}`;
+        
+        if (type === 'query_seat') {
+            const seat = document.getElementById('searchSeatNum').value;
+            if (!seat) return alert("請輸入座號");
+            params += `&seatNumber=${seat}`;
+        } 
+        else if (type === 'query_date') {
+            const date = document.getElementById('searchDate').value;
+            if (!date) return alert("請選擇日期");
+            params += `&date=${date}`;
+        } 
+        else if (type === 'query_range') {
+            const start = document.getElementById('startDate').value;
+            const end = document.getElementById('endDate').value;
+            if (!start || !end) return alert("請選擇完整日期區間");
+            params += `&startDate=${start}&endDate=${end}`;
+        }
+
+        setLoading(true);
+        try {
+            const response = await fetch(`${SCRIPT_URL}?${params}`);
+            const json = await response.json();
+            
+            renderTable(json.data);
+        } catch (e) {
+            console.error(e);
+            alert("查詢錯誤");
+        }
+        setLoading(false);
+    }
+
+    function renderTable(data) {
+        const div = document.getElementById('resultArea');
+        if (!data || data.length === 0) {
+            div.innerHTML = '<p style="text-align:center; padding:10px;">查無資料</p>';
+            return;
+        }
+
+        let html = `<table><thead><tr><th>時間</th><th>座號</th></tr></thead><tbody>`;
+        
+        // 按時間倒序排列
+        data.sort((a, b) => new Date(b.time) - new Date(a.time));
+
+        data.forEach(row => {
+            const timeStr = new Date(row.time).toLocaleString();
+            html += `<tr><td>${timeStr}</td><td>${row.seat}</td></tr>`;
+        });
+        html += '</tbody></table>';
+        div.innerHTML = html;
+    }
+
+    function setLoading(isLoading) {
+        document.getElementById('loading').style.display = isLoading ? 'block' : 'none';
+        const btns = document.querySelectorAll('button');
+        btns.forEach(btn => btn.disabled = isLoading);
+    }
+</script>
+
+</body>
+</html>
